@@ -1,53 +1,81 @@
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card p-3 bg-light border-0 shadow-sm">
-            <div class="d-flex justify-content-between align-items-center">
-                <span><i class="fas fa-clock me-2"></i><strong>Extracción:</strong> {{ posts.fechaExtraccion }}</span>
-                <span class="badge bg-dark">Perfil: @{{ posts.perfil }}</span>
-            </div>
+<div class="row mb-4 text-center">
+    <div class="col-md-4">
+        <div class="card p-3 border-start border-success border-4">
+            <span class="text-muted small fw-bold">POSTS ANALIZADOS</span>
+            <h3 class="mb-0">{{ posts.exitosos }}</h3>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card p-3 border-start border-primary border-4">
+            <span class="text-muted small fw-bold">LIKES PROMEDIO</span>
+            <h3 class="mb-0" id="avgLikesDisplay">0</h3>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card p-3 border-start border-warning border-4">
+            <span class="text-muted small fw-bold">FECHA EXTRACCIÓN</span>
+            <h3 class="mb-0" style="font-size: 1rem;">{{ posts.fechaExtraccion.split('T')[0] }}</h3>
         </div>
     </div>
 </div>
 
-<div class="card shadow-sm border-0">
-    <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h5 class="fw-bold mb-0">Publicaciones Encontradas ({{ posts.exitosos }})</h5>
-            <form action="/descargar_csv" method="POST">
-                <input type="hidden" name="datos_json" value='{{ posts.publicaciones | tojson | safe }}'>
-                <button type="submit" class="btn btn-success btn-sm"><i class="fas fa-download me-1"></i> CSV</button>
-            </form>
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0">Insights del Perfil: @{{ posts.perfil }}</h5>
+                <form action="/descargar_csv" method="POST">
+                    <input type="hidden" name="datos_json" value='{{ posts.publicaciones | tojson | safe }}'>
+                    <button type="submit" class="btn btn-sm btn-success">
+                        <i class="fas fa-file-csv me-1"></i> Exportar
+                    </button>
+                </form>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Tipo</th>
+                            <th>Likes</th>
+                            <th>Hashtags / Menciones</th>
+                            <th>Sentimiento</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for post in posts.publicaciones %}
+                        <tr>
+                            <td>
+                                <div class="post-type-icon">
+                                    {% if post.tipo == 'video' %}<i class="fas fa-video"></i>{% else %}<i class="fas fa-image"></i>{% endif %}
+                                </div>
+                                <small class="text-muted">{{ post.fecha.split('T')[0] }}</small>
+                            </td>
+                            <td class="fw-bold">{{ post.likes if post.likes else '0' }}</td>
+                            <td style="max-width: 250px;">
+                                {% for tag in post.hashtags[:4] %}
+                                    <span class="hashtag-badge">#{{ tag }}</span>
+                                {% endfor %}
+                                <div class="mt-1">
+                                    {% for men in post.menciones[:3] %}
+                                        <span class="mention-link">{{ men }}</span>
+                                    {% endfor %}
+                                </div>
+                            </td>
+                            <td><span class="badge rounded-pill badge-{{ post.sentimiento }}">{{ post.sentimiento }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
+    </div>
 
-        <div class="table-responsive">
-            <table class="table align-middle">
-                <thead>
-                    <tr>
-                        <th>Post</th>
-                        <th>Info</th>
-                        <th>Interacción</th>
-                        <th>Contenido</th>
-                        <th>IA</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for post in posts.publicaciones %}
-                    <tr>
-                        <td><a href="{{ post.url }}" target="_blank" class="btn btn-link btn-sm">Link <i class="fas fa-external-link-alt"></i></a></td>
-                        <td>
-                            <span class="badge bg-secondary">{{ post.tipo }}</span><br>
-                            <small class="text-muted">{{ post.fecha.split('T')[0] }}</small>
-                        </td>
-                        <td><strong>{{ post.likes if post.likes else '0' }}</strong> <small>likes</small></td>
-                        <td>
-                            {% for tag in post.hashtags[:3] %}<span class="text-info small">#{{ tag }}</span> {% endfor %}
-                            <div class="text-truncate" style="max-width: 200px;"><small>{{ post.menciones[0] if post.menciones else '' }}</small></div>
-                        </td>
-                        <td><span class="badge rounded-pill bg-{{ 'success' if post.sentimiento == 'Positivo' else 'danger' if post.sentimiento == 'Negativo' else 'secondary' }}">{{ post.sentimiento }}</span></td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    <div class="col-lg-4">
+        <div class="card p-4 h-100">
+            <h5 class="fw-bold mb-4 text-center">Distribución IA</h5>
+            <div id="graficoContainer">
+                <canvas id="graficoCanvas" data-posts='{{ posts | tojson | safe }}'></canvas>
+            </div>
         </div>
     </div>
 </div>

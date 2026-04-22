@@ -3,6 +3,7 @@ import re
 import csv
 import io
 import json
+import datetime
 from flask import Flask, render_template, request, Response
 from playwright.sync_api import sync_playwright
 from transformers import pipeline
@@ -11,8 +12,7 @@ from dotenv import load_dotenv
 load_dotenv()
 app = Flask(__name__)
 
-# Configuración del modelo BERT Multilingüe para análisis de sentimientos
-# Se mantiene este modelo por su alta precisión en español e inglés
+# Configuración del modelo BERT Multilingüe
 sentiment_pipeline = pipeline(
     "sentiment-analysis",
     model="nlptown/bert-base-multilingual-uncased-sentiment"
@@ -25,11 +25,8 @@ def analizar_sentimiento_pro(comentarios):
     puntuaciones = []
     for texto in comentarios:
         try:
-            # El modelo BERT devuelve etiquetas de '1 star' a '5 stars'
             res = sentiment_pipeline(texto[:512])[0]
             score = int(res['label'].split()[0])
-            
-            # Mapeo de estrellas a valores numéricos para promedio
             if score >= 4: puntuaciones.append(1)   # Positivo
             elif score <= 2: puntuaciones.append(-1) # Negativo
             else: puntuaciones.append(0)             # Neutro
@@ -39,36 +36,52 @@ def analizar_sentimiento_pro(comentarios):
     if not puntuaciones: return "Neutro"
     promedio = sum(puntuaciones) / len(puntuaciones)
     
-    # Umbrales para determinar el sentimiento general del post
     if promedio > 0.2: return "Positivo"
     elif promedio < -0.2: return "Negativo"
     return "Neutro"
 
 def obtener_posts(username, cantidad):
     posts_data = []
+    fecha_extraccion = datetime.datetime.now().isoformat() + "Z"
+
     with sync_playwright() as p:
-        # headless=True para ejecución en segundo plano (ideal para producción/QA)
         browser = p.chromium.launch(headless=True)
-        # Importante: Requiere que login.py haya generado state.json satisfactoriamente
+        # Asegúrate de que state.json exista en la raíz del proyecto
         context = browser.new_context(storage_state="state.json")
         page = context.new_page()
 
         try:
+            # Navegar al perfil
             page.goto(f"https://www.instagram.com/{username}/", wait_until="domcontentloaded", timeout=60000)
             page.wait_for_selector('a[href*="/p/"]', timeout=15000)
             
-            # Scroll suave para asegurar que los elementos se rendericen
+            # Scroll para cargar elementos
             page.mouse.wheel(0, 1000)
             page.wait_for_timeout(2000)
             
-            posts = page.query_selector_all('a[href*="/p/"]')
+            enlaces = page.query_selector_all('a[href*="/p/"]')
+            urls = [f"https://www.instagram.com{e.get_attribute('href')}" for e in enlaces[:cantidad]]
 
-            for post in posts[:cantidad]:
+            for url in urls:
                 try:
-                    post.click()
-                    page.wait_for_timeout(3000)
+                    page.goto(url, wait_until="networkidle")
+                    page.wait_for_timeout(2000)
 
-                    # Extracción de Likes con Regex (soporta inglés y español)
+                    # 1. Obtener Descripción para extraer Tags y Menciones
+                    desc_element = page.query_selector('h1, span._ap3a')
+                    descripcion = desc_element.inner_text() if desc_element else ""
+                    
+                    hashtags = re.findall(r'#(\w+)', descripcion)
+                    menciones = [f"@{m}" for m in re.findall(r'@(\w+)', descripcion)]
+
+                    # 2. Tipo de Contenido
+                    tipo = "video" if page.query_selector('video') else "imagen"
+
+                    # 3. Fecha del Post
+                    time_element = page.query_selector('time')
+                    fecha_iso = time_element.get_attribute('datetime') if time_element else ""
+
+                    # 4. Likes
                     likes = "0"
                     likes_element = page.locator('section').filter(has_text=re.compile(r'likes|me gusta', re.I)).first
                     if likes_element.is_visible():
@@ -76,31 +89,43 @@ def obtener_posts(username, cantidad):
                         match = re.search(r'([\d.,]+)', text_likes)
                         likes = match.group(1) if match else "0"
 
-                    # Captura de comentarios significativos para la IA
+                    # 5. Análisis de Sentimiento con BERT
                     comment_spans = page.query_selector_all('ul li span')
                     comentarios_texto = [s.inner_text() for s in comment_spans if len(s.inner_text()) > 5][:8]
-
                     sentimiento = analizar_sentimiento_pro(comentarios_texto)
 
                     posts_data.append({
+                        "url": url,
+                        "tipo": tipo,
                         "likes": likes,
-                        "comentarios": len(comentarios_texto),
-                        "sentimiento": sentimiento
+                        "fecha": fecha_iso,
+                        "hashtags": hashtags,
+                        "menciones": menciones,
+                        "sentimiento": sentimiento,
+                        "descripcion": descripcion[:100] + "..." # Opcional: resumen
                     })
 
-                    page.keyboard.press("Escape")
-                    page.wait_for_timeout(1000)
-                except:
-                    page.keyboard.press("Escape")
+                except Exception as e:
+                    print(f"Error procesando post {url}: {e}")
+                    continue
+
+            return {
+                "fechaExtraccion": fecha_extraccion,
+                "perfil": username,
+                "total": len(urls),
+                "exitosos": len(posts_data),
+                "publicaciones": posts_data
+            }
+
         except Exception as e:
-            print(f"Error detectado en el Scraper: {e}")
+            print(f"Error en Scraper: {e}")
+            return None
         finally:
             browser.close()
-    return posts_data
 
 @app.route("/", methods=["GET", "POST"])
 def index():
-    posts = []
+    posts = None
     if request.method == "POST":
         user = request.form.get("username").replace("@", "").strip()
         cant = int(request.form.get("cantidad", 5))
@@ -111,24 +136,31 @@ def index():
 def descargar_csv():
     datos_raw = request.form.get("datos_json")
     if not datos_raw: 
-        return "No hay datos para exportar", 400
+        return "No hay datos", 400
         
-    posts = json.loads(datos_raw)
-    
-    # Creación del archivo CSV en memoria
+    publicaciones = json.loads(datos_raw)
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(['Post #', 'Likes', 'Comentarios', 'Sentimiento'])
     
-    for i, p in enumerate(posts, 1):
-        writer.writerow([i, p['likes'], p['comentarios'], p['sentimiento']])
+    # Cabeceras completas
+    writer.writerow(['Fecha', 'Tipo', 'Likes', 'URL', 'Sentimiento', 'Hashtags', 'Menciones'])
+    
+    for p in publicaciones:
+        writer.writerow([
+            p.get('fecha', '').split('T')[0],
+            p.get('tipo', 'imagen'),
+            p.get('likes', '0'),
+            p.get('url', ''),
+            p.get('sentimiento', 'Neutro'),
+            ", ".join(p.get('hashtags', [])),
+            ", ".join(p.get('menciones', []))
+        ])
     
     return Response(
         output.getvalue(),
         mimetype="text/csv",
-        headers={"Content-disposition": "attachment; filename=reporte_instagram.csv"}
+        headers={"Content-disposition": "attachment; filename=analisis_instagram.csv"}
     )
 
 if __name__ == "__main__":
-    # debug=True es útil para desarrollo, cámbialo a False en PROD
     app.run(debug=True)
