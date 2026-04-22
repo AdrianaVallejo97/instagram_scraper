@@ -1,0 +1,53 @@
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card p-3 bg-light border-0 shadow-sm">
+            <div class="d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-clock me-2"></i><strong>Extracción:</strong> {{ posts.fechaExtraccion }}</span>
+                <span class="badge bg-dark">Perfil: @{{ posts.perfil }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h5 class="fw-bold mb-0">Publicaciones Encontradas ({{ posts.exitosos }})</h5>
+            <form action="/descargar_csv" method="POST">
+                <input type="hidden" name="datos_json" value='{{ posts.publicaciones | tojson | safe }}'>
+                <button type="submit" class="btn btn-success btn-sm"><i class="fas fa-download me-1"></i> CSV</button>
+            </form>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>Post</th>
+                        <th>Info</th>
+                        <th>Interacción</th>
+                        <th>Contenido</th>
+                        <th>IA</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for post in posts.publicaciones %}
+                    <tr>
+                        <td><a href="{{ post.url }}" target="_blank" class="btn btn-link btn-sm">Link <i class="fas fa-external-link-alt"></i></a></td>
+                        <td>
+                            <span class="badge bg-secondary">{{ post.tipo }}</span><br>
+                            <small class="text-muted">{{ post.fecha.split('T')[0] }}</small>
+                        </td>
+                        <td><strong>{{ post.likes if post.likes else '0' }}</strong> <small>likes</small></td>
+                        <td>
+                            {% for tag in post.hashtags[:3] %}<span class="text-info small">#{{ tag }}</span> {% endfor %}
+                            <div class="text-truncate" style="max-width: 200px;"><small>{{ post.menciones[0] if post.menciones else '' }}</small></div>
+                        </td>
+                        <td><span class="badge rounded-pill bg-{{ 'success' if post.sentimiento == 'Positivo' else 'danger' if post.sentimiento == 'Negativo' else 'secondary' }}">{{ post.sentimiento }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
