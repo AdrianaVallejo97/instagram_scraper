@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instagram Analytics Pro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f4f7f6; }
+        .navbar { background: linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045); color: white; }
+        .card { border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .btn-primary { background-color: #0095f6; border: none; }
+        #graficoContainer { height: 300px; position: relative; }
+        .badge-Positivo { background-color: #d1e7dd; color: #0f5132; }
+        .badge-Negativo { background-color: #f8d7da; color: #842029; }
+        .badge-Neutro { background-color: #e2e3e5; color: #41464b; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar py-3 mb-4">
+    <div class="container">
+        <h4 class="mb-0"><i class="fab fa-instagram me-2"></i> Instagram Analytics</h4>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="card p-4 mb-4">
+        <form method="POST" class="row g-3 align-items-end">
+            <div class="col-md-5">
+                <label class="form-label fw-bold">Usuario de Instagram</label>
+                <div class="input-group">
+                    <span class="input-group-text">@</span>
+                    <input type="text" name="username" class="form-control" placeholder="porsche" required>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-bold">Cantidad de Posts</label>
+                <input type="number" name="cantidad" class="form-control" value="5" min="1" max="20">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100 py-2"><i class="fas fa-search me-1"></i> Analizar</button>
+            </div>
+            <div class="col-md-2">
+                <a href="/" class="btn btn-outline-secondary w-100 py-2">Limpiar</a>
+            </div>
+        </form>
+    </div>
+
+    {% if posts %}
+    <div class="row mb-4 text-center">
+        <div class="col-md-4">
+            <div class="card p-3 border-start border-success border-4">
+                <span class="text-muted small fw-bold">POSTS ANALIZADOS</span>
+                <h3 class="mb-0">{{ posts|length }}</h3>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card p-3 border-start border-primary border-4">
+                <span class="text-muted small fw-bold">LIKES PROMEDIO</span>
+                <h3 class="mb-0" id="avgLikesDisplay">0</h3>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card p-3 border-start border-warning border-4">
+                <span class="text-muted small fw-bold">ESTADO IA</span>
+                <h3 class="mb-0 text-success" style="font-size: 1.1rem;">BERT Multilingual</h3>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-7">
+            <div class="card p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0">Data Insight</h5>
+                    <form action="/descargar_csv" method="POST">
+                        <input type="hidden" name="datos_json" value='{{ posts | tojson | safe }}'>
+                        <button type="submit" class="btn btn-sm btn-success">
+                            <i class="fas fa-file-csv me-1"></i> Exportar CSV
+                        </button>
+                    </form>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>#</th>
+                                <th><i class="fas fa-heart text-danger me-1"></i> Likes</th>
+                                <th>Sentimiento IA</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for post in posts %}
+                            <tr>
+                                <td>{{ loop.index }}</td>
+                                <td class="fw-bold">{{ post.likes }}</td>
+                                <td><span class="badge rounded-pill badge-{{ post.sentimiento }}">{{ post.sentimiento }}</span></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card p-4 h-100">
+                <h5 class="fw-bold mb-4 text-center">Distribución de Sentimientos</h5>
+                <div id="graficoContainer">
+                    <canvas id="graficoCanvas" data-posts='{{ posts | tojson | safe if posts else "[]" }}'></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const canvas = document.getElementById('graficoCanvas');
+        if (!canvas) return;
+
+        let postsData = [];
+        try {
+            postsData = JSON.parse(canvas.getAttribute('data-posts'));
+        } catch (e) {
+            console.error("Error al procesar datos:", e);
+        }
+
+        if (postsData.length > 0) {
+            let counts = { "Positivo": 0, "Negativo": 0, "Neutro": 0 };
+            let totalLikes = 0;
+
+            postsData.forEach(p => {
+                const s = p.sentimiento || "Neutro";
+                if (counts.hasOwnProperty(s)) counts[s]++;
+                
+                const l = String(p.likes || "0").replace(/[^0-9]/g, '');
+                totalLikes += parseInt(l) || 0;
+            });
+
+            const display = document.getElementById('avgLikesDisplay');
+            if (display) {
+                display.innerText = Math.round(totalLikes / postsData.length).toLocaleString();
+            }
+
+            new Chart(canvas, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Positivo', 'Negativo', 'Neutro'],
+                    datasets: [{
+                        data: [counts["Positivo"], counts["Negativo"], counts["Neutro"]],
+                        backgroundColor: ['#2ecc71', '#e74c3c', '#95a5a6'],
+                        borderWidth: 2,
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    },
+                    cutout: '70%'
+                }
+            });
+        }
+    });
+</script>
+</body>
+</html>
