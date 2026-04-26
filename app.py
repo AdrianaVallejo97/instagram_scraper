@@ -51,7 +51,7 @@ def obtener_posts(username, cantidad):
             
             # Forzamos scroll para cargar más de los 3-4 posts iniciales
             page.mouse.wheel(0, 3000) 
-            page.wait_for_timeout(3000) # Esperamos a que el DOM se actualice con nuevos enlaces
+            page.wait_for_timeout(3000) # tiempo para que cargue contenido ms
             
             page.wait_for_selector('a[href*="/p/"]', timeout=15000)
             enlaces = page.query_selector_all('a[href*="/p/"]')
@@ -87,9 +87,9 @@ def obtener_posts(username, cantidad):
                     fecha_iso = time_elem.get_attribute('datetime') if time_elem else ""
 
                     comment_spans = page.query_selector_all('ul li span')
-                    comentarios = [s.inner_text() for s in comment_spans if len(s.inner_text()) > 5][:3]
+                    comentarios = [s.inner_text() for s in comment_spans if len(s.inner_text()) > 5][:3] # Mantenerte en los 3 primeros evita activar esos sensores.
                     
-                    texto_ia = comentarios if comentarios else [meta_content[:500]]
+                    texto_ia = comentarios if comentarios else [meta_content[:500]] #los 500 representan la cantidad de caracteres(letras, espacios y símbolos) que le permites pasar a la IA desde el meta_content
                     sentimiento = analizar_sentimiento_pro(texto_ia)
 
                     posts_data.append({
