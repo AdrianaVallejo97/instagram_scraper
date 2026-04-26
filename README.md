@@ -39,7 +39,6 @@ Se promedia el resultado para obtener el sentimiento final del post.
 - Flask  
 - Playwright (scraping automatizado)  
 - Transformers (NLP)  
-- PyTorch  
 
 ### 🔹 Frontend
 - HTML5  
@@ -115,3 +114,22 @@ INSTAGRAM_SCRAPER/
 ├── requirements.txt
 ├── state.json
 └── README.md
+```
+## ▶️ Ejecución
+
+Para iniciar la aplicación:
+
+```bash
+python app.py
+http://127.0.0.1:5000/
+```
+##📤 Exportación
+
+El sistema permite exportar los datos en formato CSV, incluyendo:
+
+- Fecha
+- Likes
+- URL
+- Sentimiento
+- Hashtags
+- Menciones
