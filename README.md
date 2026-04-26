@@ -48,9 +48,42 @@ Se promedia el resultado para obtener el sentimiento final del post.
 - JavaScript  
 
 ---
+## 🧪 Entorno Virtual e Instalación
+
+Se recomienda usar un entorno virtual para aislar las dependencias del proyecto.
+
+### 🔹 Crear entorno virtual
+```bash
+python -m venv venv
+```
+### 🔹 Activar entorno (Windows)
+venv\Scripts\activate
+### 🔹 Instalar dependencias
+pip install -r requirements.txt
+###🔹 Instalar Playwright
+playwright install
+### 🔐 Manejo de Cookies (Autenticación)
+
+El sistema utiliza cookies para mantener la sesión activa en Instagram y evitar bloqueos.
+
+🔍 ¿Cómo funciona?
+Se inicia sesión manualmente en Instagram usando login.py
+Playwright guarda la sesión autenticada
+Esa sesión se reutiliza en el scraper
+📂 ¿Dónde se guardan?
+Archivo: state.json
+⚙️ ¿Qué contiene?
+Cookies de sesión
+Tokens de autenticación
+Datos de navegación
+
+👉 Esto permite:
+
+Evitar login repetitivo
+Simular un usuario real
+Reducir detección como bot
 
 ## ⚙️ Funcionamiento del Scraper
-
 El sistema usa automatización con navegador real (Playwright), lo cual es clave porque:
 
 - Instagram detecta bots fácilmente  
@@ -82,17 +115,71 @@ Esto evita bloqueos y asegura datos completos.
 
 ---
 
-## 📊 Dashboard
+## 🖥️ Funcionalidades de la Interfaz
 
-Incluye:
+La aplicación cuenta con una interfaz web sencilla e intuitiva que permite al usuario interactuar con el sistema de análisis.
 
-- ✔ Total de posts analizados  
-- ✔ Promedio de likes  
-- ✔ Fecha de extracción  
-- ✔ Tabla con datos  
-- ✔ Gráfico de sentimientos  
+### 🔹 Formulario de entrada
+- Permite ingresar el **usuario de Instagram**
+- Permite definir la **cantidad de publicaciones a analizar**
+- Botón **"Analizar"** para iniciar el proceso
+- Botón **"Limpiar"** para reiniciar la búsqueda
 
 ---
+
+### 🔹 Panel de métricas (cards)
+Se muestran indicadores clave:
+
+- 📌 **Posts analizados** → cantidad de publicaciones procesadas  
+- ❤️ **Likes promedio** → promedio de interacciones  
+- 📅 **Fecha de extracción** → momento del análisis  
+
+---
+
+### 🔹 Tabla de resultados
+Presenta la información detallada de cada publicación:
+
+- Fecha de publicación  
+- Número de likes  
+- Hashtags detectados  
+- Menciones encontradas  
+- Clasificación de sentimiento  
+
+👉 Incluye:
+- Etiquetas visuales (badges) para sentimientos  
+- Visualización resumida de hashtags y menciones  
+
+---
+
+### 🔹 Gráfico de sentimientos
+- Tipo: **Gráfico de dona (Chart.js)**
+- Muestra la distribución de:
+  - Positivo  
+  - Negativo  
+  - Neutro  
+
+👉 Permite identificar rápidamente la percepción general del contenido.
+
+---
+
+### 🔹 Exportación de datos
+- Botón **"Exportar CSV"**
+- Descarga automática de los resultados
+- Incluye:
+  - Fecha  
+  - Likes  
+  - URL  
+  - Sentimiento  
+  - Hashtags  
+  - Menciones  
+
+---
+
+### 🔹 Diseño visual
+- Interfaz responsiva (adaptable a distintos dispositivos)
+- Uso de **Bootstrap 5**
+- Estilo moderno con tarjetas y colores tipo Instagram
+- Navegación clara y centrada en el usuario
 
 ## 📁 Estructura del Proyecto
 
@@ -123,13 +210,3 @@ Para iniciar la aplicación:
 python app.py
 http://127.0.0.1:5000/
 ```
-##📤 Exportación
-
-El sistema permite exportar los datos en formato CSV, incluyendo:
-
-- Fecha
-- Likes
-- URL
-- Sentimiento
-- Hashtags
-- Menciones
