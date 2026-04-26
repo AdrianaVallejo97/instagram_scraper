@@ -60,7 +60,8 @@ python -m venv venv
 venv\Scripts\activate
 ### 🔹 Instalar dependencias
 pip install -r requirements.txt
-###🔹 Instalar Playwright
+
+### 🔹 Instalar Playwright
 playwright install
 ### 🔐 Manejo de Cookies (Autenticación)
 
