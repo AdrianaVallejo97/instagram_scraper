@@ -18,9 +18,9 @@ Aplicación web desarrollada con Flask que permite analizar perfiles de Instagra
 `nlptown/bert-base-multilingual-uncased-sentiment`
 
 ### 🔍 Características
-- Basado en arquitectura BERT
-- Multilenguaje (incluye español)
-- Clasificación de sentimientos en escala de 1 a 5
+- Basado en arquitectura BERT  
+- Multilenguaje (incluye español)  
+- Clasificación de sentimientos en escala de 1 a 5  
 
 ### 📊 Interpretación
 
@@ -35,18 +35,18 @@ Se promedia el resultado para obtener el sentimiento final del post.
 ## ⚙️ Tecnologías
 
 ### 🔹 Backend
-- Python
-- Flask
-- Playwright (scraping automatizado)
-- Transformers (NLP)
-
+- Python  
+- Flask  
+- Playwright (scraping automatizado)  
+- Transformers (NLP)  
+- PyTorch  
 
 ### 🔹 Frontend
-- HTML5
-- CSS3
-- Bootstrap 5
-- Chart.js
-- JavaScript
+- HTML5  
+- CSS3  
+- Bootstrap 5  
+- Chart.js  
+- JavaScript  
 
 ---
 
@@ -115,27 +115,3 @@ INSTAGRAM_SCRAPER/
 ├── requirements.txt
 ├── state.json
 └── README.md
-
----
-## ▶️ Ejecución
-
-```bash
-python app.py
-
-Abrir en:
-
-http://127.0.0.1:5000/
-📤 Exportación
-
-Formato CSV con:
-
-Fecha
-Likes
-URL
-Sentimiento
-Hashtags
-Menciones
-👩‍💻 Autora
-
-Adriana Thalia Vallejo Muñoz
-Ingeniería en Sistemas
