@@ -96,17 +96,19 @@ Incluye:
 ---
 
 ## 📁 Estructura del Proyecto
+
+```bash
 INSTAGRAM_SCRAPER/
 │
 ├── static/
-│ ├── css/
-│ │ └── style.css
-│ ├── js/
-│ │ └── dashboard.js
+│   ├── css/
+│   │   └── style.css
+│   ├── js/
+│   │   └── dashboard.js
 │
 ├── templates/
-│ ├── index.html
-│ └── _results.html
+│   ├── index.html
+│   └── _results.html
 │
 ├── app.py
 ├── login.py
@@ -114,9 +116,7 @@ INSTAGRAM_SCRAPER/
 ├── state.json
 └── README.md
 
-
 ---
-
 ## ▶️ Ejecución
 
 ```bash
