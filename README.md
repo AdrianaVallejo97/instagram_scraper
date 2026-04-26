@@ -99,12 +99,14 @@ Incluye:
 INSTAGRAM_SCRAPER/
 │
 ├── static/
-│ ├── css/style.css
-│ ├── js/dashboard.js
+│ ├── css/
+│ │ └── style.css
+│ ├── js/
+│ │ └── dashboard.js
 │
 ├── templates/
 │ ├── index.html
-│ ├── _results.html
+│ └── _results.html
 │
 ├── app.py
 ├── login.py
